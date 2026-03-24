@@ -2,11 +2,11 @@
 
 import { useActionState } from "react";
 
+import { saveBusinessProfile } from "@/app/onboarding/business/actions";
 import {
   businessOnboardingInitialState,
-  saveBusinessProfile,
   type BusinessOnboardingState,
-} from "@/app/onboarding/business/actions";
+} from "@/app/onboarding/business/state";
 import { Button } from "@/components/ui/button";
 
 export function BusinessOnboardingForm() {

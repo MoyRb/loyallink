@@ -3,11 +3,8 @@
 import { useActionState, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import {
-  handleAuthAction,
-  initialAuthActionState,
-  type AuthActionState,
-} from "@/app/acceso/actions";
+import { handleAuthAction } from "@/app/acceso/actions";
+import { initialAuthActionState, type AuthActionState } from "@/app/acceso/state";
 import type { UserRole } from "@/lib/types/domain";
 import { cn } from "@/lib/utils/cn";
 

@@ -2,16 +2,9 @@
 
 import { redirect } from "next/navigation";
 
+import type { CustomerOnboardingState } from "@/app/onboarding/customer/state";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
-
-export interface CustomerOnboardingState {
-  error: string | null;
-}
-
-export const customerOnboardingInitialState: CustomerOnboardingState = {
-  error: null,
-};
 
 export async function saveCustomerProfile(
   _state: CustomerOnboardingState,

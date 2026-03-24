@@ -2,19 +2,10 @@
 
 import { redirect } from "next/navigation";
 
+import type { AuthActionState } from "@/app/acceso/state";
 import { resolveRedirectByRole } from "@/lib/auth/redirect-by-role";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import type { UserRole } from "@/lib/types/domain";
-
-export interface AuthActionState {
-  error: string | null;
-  message: string | null;
-}
-
-export const initialAuthActionState: AuthActionState = {
-  error: null,
-  message: null,
-};
 
 function normalizeRole(value: FormDataEntryValue | null): UserRole {
   return value === "business_owner" ? "business_owner" : "customer";
