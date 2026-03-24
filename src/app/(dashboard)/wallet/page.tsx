@@ -1,9 +1,10 @@
-import { Card } from "@/components/ui/card";
+import { redirect } from "next/navigation";
 
-export const dynamic = "force-dynamic";
-import { mockCards, mockTransactions } from "@/features/loyalty/mock-data";
+import { Card } from "@/components/ui/card";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
 import { getCustomerWalletData } from "@/lib/supabase/queries";
+
+export const dynamic = "force-dynamic";
 
 const transactionSourceLabels: Record<string, string> = {
   qr_claim: "QR de acumulación",
@@ -11,45 +12,29 @@ const transactionSourceLabels: Record<string, string> = {
 };
 
 function getTierLabel(pointsBalance: number) {
-  if (pointsBalance >= 100) {
-    return "Oro";
-  }
-
-  if (pointsBalance >= 50) {
-    return "Plata";
-  }
-
+  if (pointsBalance >= 100) return "Oro";
+  if (pointsBalance >= 50) return "Plata";
   return "Bronce";
 }
 
 export default async function WalletPage() {
   const user = await getCurrentUser();
 
-  const useMockData = !user || user.role !== "customer";
+  if (!user) {
+    redirect("/acceso?rol=customer");
+  }
 
-  const data = useMockData ? null : await getCustomerWalletData(user.id);
+  if (user.role !== "customer") {
+    redirect("/business");
+  }
 
-  const cards = useMockData
-    ? mockCards.map((card) => ({
-        id: `${card.businessId}-mock`,
-        businessId: card.businessId,
-        businessName: card.businessName,
-        cardLabel: null,
-        balance: card.pointsBalance,
-      }))
-    : data?.cards ?? [];
+  if (!user.fullName?.trim()) {
+    redirect("/onboarding/customer");
+  }
 
-  const transactions = useMockData
-    ? mockTransactions.map((transaction) => ({
-        id: transaction.id,
-        businessId: transaction.businessId,
-        businessName: transaction.businessName,
-        type: transaction.type,
-        points: transaction.points,
-        source: transaction.source,
-        createdAt: transaction.createdAt,
-      }))
-    : data?.transactions ?? [];
+  const data = await getCustomerWalletData(user.id);
+  const cards = data.cards;
+  const transactions = data.transactions;
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
@@ -58,11 +43,6 @@ export default async function WalletPage() {
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
           Revisa tus tarjetas por negocio, tus puntos acumulados y cada movimiento registrado.
         </p>
-        {useMockData ? (
-          <p className="mt-2 text-xs text-amber-600">
-            Mostrando datos de ejemplo. Inicia sesión como customer para cargar datos reales de Supabase.
-          </p>
-        ) : null}
       </header>
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -95,6 +75,9 @@ export default async function WalletPage() {
                 </p>
               </li>
             ))}
+            {transactions.length === 0 ? (
+              <li className="text-sm text-zinc-500 dark:text-zinc-400">Aún no tienes movimientos registrados.</li>
+            ) : null}
           </ul>
         </Card>
       </section>
