@@ -2,11 +2,11 @@
 
 import { useActionState } from "react";
 
+import { saveCustomerProfile } from "@/app/onboarding/customer/actions";
 import {
   customerOnboardingInitialState,
-  saveCustomerProfile,
   type CustomerOnboardingState,
-} from "@/app/onboarding/customer/actions";
+} from "@/app/onboarding/customer/state";
 import { Button } from "@/components/ui/button";
 
 interface CustomerOnboardingFormProps {

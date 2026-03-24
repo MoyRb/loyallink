@@ -4,16 +4,9 @@ import { randomUUID } from "node:crypto";
 
 import { redirect } from "next/navigation";
 
+import type { BusinessOnboardingState } from "@/app/onboarding/business/state";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
-
-export interface BusinessOnboardingState {
-  error: string | null;
-}
-
-export const businessOnboardingInitialState: BusinessOnboardingState = {
-  error: null,
-};
 
 function slugify(input: string) {
   return input
