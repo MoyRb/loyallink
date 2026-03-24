@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 
+import { BusinessProfileForm } from "@/components/business/business-profile-form";
 import { Card } from "@/components/ui/card";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
 import { getOwnerBusinesses, type OwnerBusiness } from "@/lib/supabase/queries";
@@ -23,6 +24,8 @@ export default async function BusinessPage() {
     redirect("/onboarding/business");
   }
 
+  const business = businesses[0];
+
   return (
     <main className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6 lg:px-8">
       <header className="mb-6">
@@ -32,20 +35,37 @@ export default async function BusinessPage() {
         </p>
       </header>
 
-      <Card title="Negocios vinculados" description="Datos cargados desde Supabase para el owner autenticado.">
-        <ul className="space-y-2 text-sm">
-          {businesses.map((business) => (
-            <li key={business.id} className="flex items-center justify-between rounded-lg border border-black/10 p-3 dark:border-white/10">
-              <div>
-                <p className="font-medium">{business.name}</p>
-                <p className="text-zinc-500 dark:text-zinc-400">/{business.slug}</p>
-                {business.description ? <p className="text-zinc-500 dark:text-zinc-400">{business.description}</p> : null}
-              </div>
-              <p className="text-xs uppercase tracking-wide text-zinc-500">{business.primary_color ?? "Sin color"}</p>
-            </li>
-          ))}
-        </ul>
-      </Card>
+      <div className="grid gap-6">
+        <Card title="Perfil del negocio" description="Actualiza la información visible de tu negocio y su logo.">
+          <BusinessProfileForm
+            initialName={business.name}
+            initialSlug={business.slug}
+            initialDescription={business.description}
+            initialPrimaryColor={business.primary_color}
+            initialLogoUrl={business.logo_url}
+          />
+        </Card>
+
+        <Card title="Negocios vinculados" description="Datos cargados desde Supabase para el owner autenticado.">
+          <ul className="space-y-2 text-sm">
+            {businesses.map((businessItem) => (
+              <li
+                key={businessItem.id}
+                className="flex items-center justify-between rounded-lg border border-black/10 p-3 dark:border-white/10"
+              >
+                <div>
+                  <p className="font-medium">{businessItem.name}</p>
+                  <p className="text-zinc-500 dark:text-zinc-400">/{businessItem.slug}</p>
+                  {businessItem.description ? (
+                    <p className="text-zinc-500 dark:text-zinc-400">{businessItem.description}</p>
+                  ) : null}
+                </div>
+                <p className="text-xs uppercase tracking-wide text-zinc-500">{businessItem.primary_color ?? "Sin color"}</p>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      </div>
     </main>
   );
 }
