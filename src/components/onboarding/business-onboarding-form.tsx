@@ -58,9 +58,10 @@ export function BusinessOnboardingForm() {
         <input
           name="logo"
           type="file"
-          accept="image/png,image/jpeg,image/webp"
+          accept="image/png,image/jpeg,image/webp,image/svg+xml"
           className="rounded-xl border border-dashed border-black/20 p-3 text-sm dark:border-white/20"
         />
+        <span className="text-xs text-black/60 dark:text-white/60">Formatos: PNG, JPG, WEBP o SVG. Máximo 2 MB.</span>
       </label>
 
       {state.error ? (

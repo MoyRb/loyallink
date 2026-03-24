@@ -8,6 +8,10 @@ import type { BusinessOnboardingState } from "@/app/onboarding/business/state";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
+const BUSINESS_LOGOS_BUCKET = "business-logos";
+const MAX_LOGO_SIZE_BYTES = 2 * 1024 * 1024;
+const ALLOWED_LOGO_TYPES = ["image/png", "image/jpeg", "image/webp", "image/svg+xml"] as const;
+
 interface ErrorWithMessage {
   message?: string;
   code?: string;
@@ -52,6 +56,19 @@ function slugify(input: string) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)+/g, "")
     .slice(0, 40);
+}
+
+function sanitizeFileName(fileName: string) {
+  const dotIndex = fileName.lastIndexOf(".");
+  const baseName = (dotIndex > 0 ? fileName.slice(0, dotIndex) : fileName)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9-_]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80);
+  const extension = dotIndex > 0 ? fileName.slice(dotIndex + 1).toLowerCase() : "png";
+
+  return `${baseName || "logo"}.${extension}`;
 }
 
 async function ensureUniqueSlug(baseSlug: string) {
@@ -113,43 +130,63 @@ export async function saveBusinessProfile(
     const supabase = await getSupabaseServerClient();
 
     if (logo instanceof File && logo.size > 0) {
-      if (logo.size > 2 * 1024 * 1024) {
+      if (logo.size > MAX_LOGO_SIZE_BYTES) {
         return { error: "El logo debe pesar máximo 2 MB." };
       }
 
-      if (!["image/png", "image/jpeg", "image/webp"].includes(logo.type)) {
-        return { error: "El logo debe ser PNG, JPG o WEBP." };
+      if (!ALLOWED_LOGO_TYPES.includes(logo.type as (typeof ALLOWED_LOGO_TYPES)[number])) {
+        return { error: "Formato inválido. Usa PNG, JPG, WEBP o SVG." };
       }
 
-      const { error: bucketError } = await supabase.storage.getBucket("business-logos");
+      const { data: bucketData, error: bucketError } = await supabase.storage.getBucket(BUSINESS_LOGOS_BUCKET);
       if (bucketError) {
-        const detailedMessage = `No se encontró el bucket "business-logos": ${bucketError.message}`;
+        const detailedMessage = `No se encontró el bucket "${BUSINESS_LOGOS_BUCKET}": ${bucketError.message}`;
         console.error("[onboarding/business] bucket validation failed", {
           userId: user.id,
+          bucket: BUSINESS_LOGOS_BUCKET,
           error: bucketError,
         });
         return { error: detailedMessage };
       }
 
-      const extension = logo.name.split(".").pop()?.toLowerCase() ?? "png";
-      const path = `${user.id}/${randomUUID()}.${extension}`;
-      const { error: uploadError } = await supabase.storage.from("business-logos").upload(path, logo, {
+      if (bucketData.name !== BUSINESS_LOGOS_BUCKET) {
+        const detailedMessage = `Bucket inválido para logos: ${bucketData.name}`;
+        console.error("[onboarding/business] unexpected bucket name", {
+          userId: user.id,
+          expected: BUSINESS_LOGOS_BUCKET,
+          received: bucketData.name,
+        });
+        return { error: detailedMessage };
+      }
+
+      const safeFileName = sanitizeFileName(logo.name);
+      const path = `${user.id}/${randomUUID()}-${safeFileName}`;
+      const { error: uploadError } = await supabase.storage.from(BUSINESS_LOGOS_BUCKET).upload(path, logo, {
         upsert: false,
         contentType: logo.type,
       });
 
       if (uploadError) {
-        const detailedMessage = `Error al subir el logo a Supabase Storage: ${uploadError.message}`;
+        const uploadErrorDetails = uploadError as unknown as ErrorWithMessage;
+        const detailedMessage = `Error al subir logo (${uploadErrorDetails.statusCode ?? "N/A"} ${
+          uploadErrorDetails.code ?? "storage_error"
+        }): ${uploadError.message}`;
         console.error("[onboarding/business] logo upload failed", {
           userId: user.id,
+          bucket: BUSINESS_LOGOS_BUCKET,
           path,
           error: uploadError,
         });
         return { error: detailedMessage };
       }
 
-      const { data: publicUrlData } = supabase.storage.from("business-logos").getPublicUrl(path);
+      const { data: publicUrlData } = supabase.storage.from(BUSINESS_LOGOS_BUCKET).getPublicUrl(path);
       logoUrl = publicUrlData.publicUrl;
+      console.info("[onboarding/business] logo uploaded successfully", {
+        userId: user.id,
+        bucket: BUSINESS_LOGOS_BUCKET,
+        path,
+      });
     }
 
     const baseSlug = slugify(name) || `negocio-${Date.now()}`;
