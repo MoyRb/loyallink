@@ -1,11 +1,11 @@
 export const siteConfig = {
   name: "LoyalLink",
   description:
-    "A multi-business loyalty platform for customers and business owners.",
+    "Plataforma de fidelización con puntos y QR para clientes y negocios.",
   navItems: [
-    { label: "Wallet", href: "/wallet" },
-    { label: "Business", href: "/business" },
-    { label: "Scan", href: "/scan" },
-    { label: "Redeem", href: "/redeem" },
+    { label: "Billetera", href: "/wallet" },
+    { label: "Negocio", href: "/business" },
+    { label: "Escanear", href: "/scan" },
+    { label: "Canjear", href: "/redeem" },
   ],
 } as const;

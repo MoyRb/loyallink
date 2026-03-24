@@ -1,7 +1,7 @@
 {
   "name": "LoyalLink",
   "short_name": "LoyalLink",
-  "description": "Multi-business loyalty wallet and points platform.",
+  "description": "Plataforma de fidelización con billetera, puntos y QR para múltiples negocios.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0a0a0a",

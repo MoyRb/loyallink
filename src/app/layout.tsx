@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     template: "%s · LoyalLink",
   },
   description:
-    "Multi-business loyalty MVP foundation with Next.js, TypeScript, Tailwind, and Supabase-ready architecture.",
+    "Plataforma de fidelización multi-negocio con puntos y QR para clientes y comercios.",
   applicationName: "LoyalLink",
   manifest: "/manifest.webmanifest",
 };
@@ -23,7 +23,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full scroll-smooth antialiased">
+    <html lang="es-MX" className="h-full scroll-smooth antialiased">
       <body className="min-h-full bg-zinc-50 font-sans text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
         {children}
       </body>
