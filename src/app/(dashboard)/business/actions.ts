@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 
 import { getCurrentUser } from "@/lib/auth/get-current-user";
+import { getSupabasePublicEnv } from "@/lib/supabase/env";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 import type { BusinessProfileUpdateState } from "@/app/(dashboard)/business/state";
@@ -75,6 +76,13 @@ function getErrorMessage(error: unknown, fallback: string) {
   }
 
   return fallback;
+}
+
+function getUploadErrorMessage(error: ErrorWithMessage) {
+  const statusCode = error.statusCode ?? "N/A";
+  const errorCode = error.code ?? "storage_error";
+  const details = error.details ? ` Detalles: ${error.details}` : "";
+  return `No se pudo subir el logo (${statusCode} - ${errorCode}): ${error.message ?? "Error desconocido"}.${details}`;
 }
 
 type BusinessesTable = {
@@ -172,19 +180,16 @@ export async function updateBusinessProfile(
         return { error: "Formato inválido. Usa PNG, JPG, WEBP o SVG.", success: null, logoUrl };
       }
 
-      const { data: bucketData, error: bucketError } = await supabase.storage.getBucket(BUSINESS_LOGOS_BUCKET);
-      if (bucketError) {
-        const detailedMessage = `No se encontró el bucket "${BUSINESS_LOGOS_BUCKET}": ${bucketError.message}`;
-        return { error: detailedMessage, success: null, logoUrl };
-      }
-
-      if (bucketData.name !== BUSINESS_LOGOS_BUCKET) {
-        const detailedMessage = `Bucket inválido para logos: ${bucketData.name}`;
-        return { error: detailedMessage, success: null, logoUrl };
-      }
-
       const safeFileName = sanitizeFileName(logo.name);
       const path = `${user.id}/${randomUUID()}-${safeFileName}`;
+      const { url: supabaseUrl } = getSupabasePublicEnv();
+
+      console.info("[dashboard/business] iniciando upload de logo", {
+        userId: user.id,
+        supabaseUrl,
+        bucket: BUSINESS_LOGOS_BUCKET,
+        path,
+      });
 
       const { error: uploadError } = await supabase.storage.from(BUSINESS_LOGOS_BUCKET).upload(path, logo, {
         upsert: false,
@@ -193,14 +198,25 @@ export async function updateBusinessProfile(
 
       if (uploadError) {
         const uploadErrorDetails = uploadError as unknown as ErrorWithMessage;
-        const detailedMessage = `Error al subir logo (${uploadErrorDetails.statusCode ?? "N/A"} ${
-          uploadErrorDetails.code ?? "storage_error"
-        }): ${uploadError.message}`;
+        const detailedMessage = getUploadErrorMessage(uploadErrorDetails);
+        console.error("[dashboard/business] logo upload failed", {
+          userId: user.id,
+          supabaseUrl,
+          bucket: BUSINESS_LOGOS_BUCKET,
+          path,
+          error: uploadError,
+        });
         return { error: detailedMessage, success: null, logoUrl };
       }
 
       const { data: publicUrlData } = supabase.storage.from(BUSINESS_LOGOS_BUCKET).getPublicUrl(path);
       logoUrl = publicUrlData.publicUrl;
+      console.info("[dashboard/business] logo subido correctamente", {
+        userId: user.id,
+        supabaseUrl,
+        bucket: BUSINESS_LOGOS_BUCKET,
+        path,
+      });
     }
 
     const { error: updateError } = await businessesTable

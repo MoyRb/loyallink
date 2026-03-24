@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 
 import type { BusinessOnboardingState } from "@/app/onboarding/business/state";
 import { getCurrentUser } from "@/lib/auth/get-current-user";
+import { getSupabasePublicEnv } from "@/lib/supabase/env";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 const BUSINESS_LOGOS_BUCKET = "business-logos";
@@ -69,6 +70,13 @@ function sanitizeFileName(fileName: string) {
   const extension = dotIndex > 0 ? fileName.slice(dotIndex + 1).toLowerCase() : "png";
 
   return `${baseName || "logo"}.${extension}`;
+}
+
+function getUploadErrorMessage(error: ErrorWithMessage) {
+  const statusCode = error.statusCode ?? "N/A";
+  const errorCode = error.code ?? "storage_error";
+  const details = error.details ? ` Detalles: ${error.details}` : "";
+  return `No se pudo subir el logo (${statusCode} - ${errorCode}): ${error.message ?? "Error desconocido"}.${details}`;
 }
 
 async function ensureUniqueSlug(baseSlug: string) {
@@ -138,29 +146,17 @@ export async function saveBusinessProfile(
         return { error: "Formato inválido. Usa PNG, JPG, WEBP o SVG." };
       }
 
-      const { data: bucketData, error: bucketError } = await supabase.storage.getBucket(BUSINESS_LOGOS_BUCKET);
-      if (bucketError) {
-        const detailedMessage = `No se encontró el bucket "${BUSINESS_LOGOS_BUCKET}": ${bucketError.message}`;
-        console.error("[onboarding/business] bucket validation failed", {
-          userId: user.id,
-          bucket: BUSINESS_LOGOS_BUCKET,
-          error: bucketError,
-        });
-        return { error: detailedMessage };
-      }
-
-      if (bucketData.name !== BUSINESS_LOGOS_BUCKET) {
-        const detailedMessage = `Bucket inválido para logos: ${bucketData.name}`;
-        console.error("[onboarding/business] unexpected bucket name", {
-          userId: user.id,
-          expected: BUSINESS_LOGOS_BUCKET,
-          received: bucketData.name,
-        });
-        return { error: detailedMessage };
-      }
-
       const safeFileName = sanitizeFileName(logo.name);
       const path = `${user.id}/${randomUUID()}-${safeFileName}`;
+      const { url: supabaseUrl } = getSupabasePublicEnv();
+
+      console.info("[onboarding/business] iniciando upload de logo", {
+        userId: user.id,
+        supabaseUrl,
+        bucket: BUSINESS_LOGOS_BUCKET,
+        path,
+      });
+
       const { error: uploadError } = await supabase.storage.from(BUSINESS_LOGOS_BUCKET).upload(path, logo, {
         upsert: false,
         contentType: logo.type,
@@ -168,11 +164,10 @@ export async function saveBusinessProfile(
 
       if (uploadError) {
         const uploadErrorDetails = uploadError as unknown as ErrorWithMessage;
-        const detailedMessage = `Error al subir logo (${uploadErrorDetails.statusCode ?? "N/A"} ${
-          uploadErrorDetails.code ?? "storage_error"
-        }): ${uploadError.message}`;
+        const detailedMessage = getUploadErrorMessage(uploadErrorDetails);
         console.error("[onboarding/business] logo upload failed", {
           userId: user.id,
+          supabaseUrl,
           bucket: BUSINESS_LOGOS_BUCKET,
           path,
           error: uploadError,
@@ -184,6 +179,7 @@ export async function saveBusinessProfile(
       logoUrl = publicUrlData.publicUrl;
       console.info("[onboarding/business] logo uploaded successfully", {
         userId: user.id,
+        supabaseUrl,
         bucket: BUSINESS_LOGOS_BUCKET,
         path,
       });
