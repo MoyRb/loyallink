@@ -15,9 +15,9 @@ export default function WalletPage() {
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
       <header className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Billetera del cliente</h1>
+        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Mi cartera</h1>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
-          Vista MVP demo para tarjetas de lealtad por negocio y saldo de puntos.
+          Revisa tus tarjetas por negocio, tus puntos acumulados y cada movimiento registrado.
         </p>
       </header>
 
@@ -35,7 +35,7 @@ export default function WalletPage() {
       </section>
 
       <section className="mt-6">
-        <Card title="Actividad reciente" description="Cada movimiento de puntos queda auditado.">
+        <Card title="Actividad reciente" description="Cada movimiento de puntos queda registrado de forma segura.">
           <ul className="space-y-3">
             {mockTransactions.map((tx) => (
               <li key={tx.id} className="flex items-center justify-between text-sm">
