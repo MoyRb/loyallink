@@ -88,12 +88,10 @@ function getUploadErrorMessage(error: ErrorWithMessage) {
 type BusinessesTable = {
   select: (columns: string) => {
     eq: (column: string, value: string) => {
+      maybeSingle: () => Promise<{ data: { id: string } | null; error: { message: string } | null }>;
       order: (column: string, options: { ascending: boolean }) => {
         limit: (amount: number) => { maybeSingle: () => Promise<{ data: OwnedBusiness | null; error: { message: string } | null }> };
       };
-    };
-    neq: (column: string, value: string) => {
-      maybeSingle: () => Promise<{ data: { id: string } | null; error: { message: string } | null }>;
     };
   };
   update: (values: {
@@ -159,13 +157,13 @@ export async function updateBusinessProfile(
       return { error: "El slug es obligatorio y solo admite letras, números y guiones.", success: null, logoUrl: business.logo_url };
     }
 
-    const { data: conflictingSlug, error: slugError } = await businessesTable.select("id").eq("slug", slug).neq("id", business.id).maybeSingle();
+    const { data: conflictingSlug, error: slugError } = await businessesTable.select("id").eq("slug", slug).maybeSingle();
 
     if (slugError) {
       return { error: `No se pudo validar el slug: ${slugError.message}`, success: null, logoUrl: business.logo_url };
     }
 
-    if (conflictingSlug) {
+    if (conflictingSlug && conflictingSlug.id !== business.id) {
       return { error: "Ese slug ya está en uso. Elige uno diferente.", success: null, logoUrl: business.logo_url };
     }
 
