@@ -1,9 +1,23 @@
-/**
- * Supabase server client placeholder.
- *
- * Next step: create and export a typed server client for Route Handlers
- * and Server Actions, with secure token validation for QR flows.
- */
-export function getSupabaseServerClient() {
-  throw new Error("Supabase server client is not wired yet. Implement in next prompt.");
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
+
+import type { Database } from "@/lib/supabase/database.types";
+import { getSupabasePublicEnv } from "@/lib/supabase/env";
+
+export async function getSupabaseServerClient() {
+  const { url, anonKey } = getSupabasePublicEnv();
+  const cookieStore = await cookies();
+
+  return createServerClient<Database>(url, anonKey, {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll();
+      },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value, options }) => {
+          cookieStore.set(name, value, options);
+        });
+      },
+    },
+  });
 }
