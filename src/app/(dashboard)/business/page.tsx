@@ -1,6 +1,14 @@
 import { Card } from "@/components/ui/card";
 
-export default function BusinessPage() {
+export const dynamic = "force-dynamic";
+import { getCurrentUser } from "@/lib/auth/get-current-user";
+import { getOwnerBusinesses, type OwnerBusiness } from "@/lib/supabase/queries";
+
+export default async function BusinessPage() {
+  const user = await getCurrentUser();
+  const canLoadBusinesses = user?.role === "business_owner";
+  const businesses: OwnerBusiness[] = canLoadBusinesses && user ? await getOwnerBusinesses(user.id) : [];
+
   return (
     <main className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6 lg:px-8">
       <header className="mb-6">
@@ -8,6 +16,11 @@ export default function BusinessPage() {
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
           Personaliza tu negocio para comenzar a dar puntos y validar canjes por QR.
         </p>
+        {!canLoadBusinesses ? (
+          <p className="mt-2 text-xs text-amber-600">
+            Inicia sesión como business_owner para ver tus negocios desde Supabase.
+          </p>
+        ) : null}
       </header>
 
       <Card title="Crear o actualizar negocio" description="Configura la información principal y tu logotipo">
@@ -32,6 +45,24 @@ export default function BusinessPage() {
           </button>
         </form>
       </Card>
+
+      {businesses.length > 0 ? (
+        <section className="mt-6">
+          <Card title="Negocios vinculados" description="Datos cargados desde Supabase para el owner autenticado.">
+            <ul className="space-y-2 text-sm">
+              {businesses.map((business) => (
+                <li key={business.id} className="flex items-center justify-between rounded-lg border border-black/10 p-3 dark:border-white/10">
+                  <div>
+                    <p className="font-medium">{business.name}</p>
+                    <p className="text-zinc-500 dark:text-zinc-400">/{business.slug}</p>
+                  </div>
+                  <p className="text-xs uppercase tracking-wide text-zinc-500">{business.primary_color ?? "Sin color"}</p>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        </section>
+      ) : null}
     </main>
   );
 }
