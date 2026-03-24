@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useActionState } from "react";
 
 import { saveBusinessProfile } from "@/app/onboarding/business/actions";
@@ -14,6 +15,12 @@ export function BusinessOnboardingForm() {
     saveBusinessProfile,
     businessOnboardingInitialState,
   );
+
+  useEffect(() => {
+    if (state.error) {
+      console.error("[onboarding/business] submit error", state.error);
+    }
+  }, [state.error]);
 
   return (
     <form action={action} className="grid gap-4">
@@ -56,7 +63,11 @@ export function BusinessOnboardingForm() {
         />
       </label>
 
-      {state.error ? <p className="text-sm text-red-600">{state.error}</p> : null}
+      {state.error ? (
+        <p role="alert" className="text-sm text-red-600">
+          {state.error}
+        </p>
+      ) : null}
 
       <Button type="submit" disabled={pending} className="w-full sm:w-auto">
         {pending ? "Guardando perfil..." : "Guardar negocio y continuar"}
