@@ -1,21 +1,34 @@
+import { redirect } from "next/navigation";
+
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { getCurrentUser } from "@/lib/auth/get-current-user";
 
-export default function ScanPage() {
+export default async function ScanPage() {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    redirect("/acceso?rol=business_owner");
+  }
+
+  if (user.role !== "business_owner") {
+    redirect("/wallet");
+  }
+
   return (
     <main className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6 lg:px-8">
       <header className="mb-6">
         <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Dar puntos con QR</h1>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
-          Otorga puntos con un escaneo ágil en caja, usando tokens temporales validados por el servidor.
+          Este módulo quedará listo después. Por ahora el acceso ya está protegido por autenticación y rol.
         </p>
       </header>
 
-      <Card title="Flujo para dar puntos" action={<Badge tone="warning">Token de servidor obligatorio</Badge>}>
+      <Card title="Siguiente etapa" action={<Badge tone="warning">Pendiente de implementación QR real</Badge>}>
         <ol className="list-decimal space-y-2 pl-4 text-sm text-zinc-700 dark:text-zinc-200">
-          <li>El negocio genera un token temporal ligado al comercio y a la regla de puntos.</li>
-          <li>El cliente escanea el QR y envía el token a una ruta segura de reclamo.</li>
-          <li>El servidor valida el token, registra la transacción y suma los puntos.</li>
+          <li>Generar token temporal en backend para acumulación de puntos.</li>
+          <li>Escanear QR y validar token contra Supabase con reglas de seguridad.</li>
+          <li>Registrar transacción y actualizar cartera del cliente.</li>
         </ol>
       </Card>
     </main>
