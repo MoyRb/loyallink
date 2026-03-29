@@ -8,7 +8,7 @@ import { siteConfig } from "@/lib/config/site";
 
 const accessCards = [
   {
-    title: "Tengo un negocio",
+    title: "Registrarme como negocio",
     description: "Administra tu programa de lealtad, personaliza marca y prepara el flujo de QR.",
     href: "/acceso?rol=business_owner",
     cta: "Entrar como negocio",
